@@ -32,6 +32,7 @@ class SwaggerUi extends Backbone.Router
     # Event handler for when the baseUrl/apiKey is entered by user
     @headerView.on 'update-swagger-ui', (data) => @updateSwaggerUi(data)
 
+
   # Event handler for when url/key is received from user
   updateSwaggerUi: (data) ->
     @options.discoveryUrl = data.discoveryUrl
@@ -49,7 +50,13 @@ class SwaggerUi extends Backbone.Router
   #  so it gets called when SwaggerApi completes loading
   render:() ->
     @showMessage('Finished Loading Resource Information. Rendering Swagger UI...')
-    @mainView = new MainView({model: @api, el: $('#' + @dom_id)}).render()
+
+    # If authorization is present and the IMPLICIT grant type is defined it can be consumed
+    # form the UI.
+    if @api.authorization? and "IMPLICIT" in @api.authorization.grantTypes and @options.oauth2
+      @options.oauth2.register(@api.authorization.scopes, @api.authorization.authorizationEndpoint)
+
+    @mainView = new MainView({model: @api, el: $('#' + @dom_id), oauth2: @options.oauth2}).render()
     @showMessage()
     switch @options.docExpansion
      when "full" then Docs.expandOperationsForResource('')

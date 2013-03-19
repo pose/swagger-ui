@@ -4,6 +4,7 @@ path        = require 'path'
 
 sourceFiles  = [
   'SwaggerUi'
+  'OAuth2Client'
   'view/HeaderView'
   'view/MainView'
   'view/ResourceView'

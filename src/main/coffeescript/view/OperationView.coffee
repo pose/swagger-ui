@@ -128,6 +128,17 @@ class OperationView extends Backbone.View
         else
           @model.urlify(map, true)
 
+      if @options.oauth2 and @options.oauth2?.token?
+        sep = if invocationUrl.indexOf('?') != -1 then '&' else '?'
+        invocationUrl += sep + "access_token=#{@options.oauth2.token.accessToken}"
+      else if @model.authorization?
+        $('.submit').wiggle()
+        if @options.oauth2
+          @options.oauth2.unauthorize()
+        else
+          alert('Error: No token provided')
+        return
+
       log 'submitting ' + invocationUrl
 
 
