@@ -273,7 +273,7 @@
           if (o.supportedContentTypes) {
             consumes = o.supportedContentTypes;
           }
-          op = new SwaggerOperation(o.nickname, resource_path, o.httpMethod, o.parameters, o.summary, o.notes, o.responseClass, o.errorResponses, this, o.consumes, o.produces);
+          op = new SwaggerOperation(o.nickname, resource_path, o.httpMethod, o.parameters, o.summary, o.notes, o.responseClass, o.errorResponses, this, o.consumes, o.produces, o.protocols);
           this.operations[op.nickname] = op;
           _results.push(this.operationsArray.push(op));
         }
@@ -398,14 +398,20 @@
     }
 
     SwaggerModelProperty.prototype.getSampleValue = function(modelToIgnore) {
-      var result;
+      var result, _ref;
       if ((this.refModel != null) && (!(this.refModel === modelToIgnore))) {
         result = this.refModel.createJSONSample(this.refModel);
       } else {
         if (this.isArray) {
           result = this.refDataType;
         } else {
-          result = this.dataType;
+          if (this.dataType === 'boolean') {
+            result = Math.random() > 0.5 ? true : false;
+          } else if ((_ref = this.dataType) === 'byte' || _ref === 'int' || _ref === 'long' || _ref === 'float' || _ref === 'double') {
+            result = Math.round(Math.random() * 10);
+          } else {
+            result = this.dataType;
+          }
         }
       }
       if (this.isArray) {
@@ -438,7 +444,7 @@
 
   SwaggerOperation = (function() {
 
-    function SwaggerOperation(nickname, path, httpMethod, parameters, summary, notes, responseClass, errorResponses, resource, consumes, produces) {
+    function SwaggerOperation(nickname, path, httpMethod, parameters, summary, notes, responseClass, errorResponses, resource, consumes, produces, protocols) {
       var parameter, v, _i, _j, _len, _len1, _ref, _ref1, _ref2,
         _this = this;
       this.nickname = nickname;
@@ -452,6 +458,7 @@
       this.resource = resource;
       this.consumes = consumes;
       this.produces = produces;
+      this.protocols = protocols;
       this["do"] = __bind(this["do"], this);
 
       if (this.nickname == null) {
@@ -769,5 +776,7 @@
   window.SwaggerOperation = SwaggerOperation;
 
   window.SwaggerRequest = SwaggerRequest;
+
+  window.SwaggerModelProperty = SwaggerModelProperty;
 
 }).call(this);
