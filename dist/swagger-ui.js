@@ -315,7 +315,7 @@ function program9(depth0,data) {
 function program11(depth0,data) {
   
   
-  return "\n                    <div class='sandbox_header'>\n                        <input class='submit' name='commit' type='button' value='Try it out!' />\n                        <a href='#' class='response_hider' style='display:none'>Hide Response</a>\n                        <img alt='Throbber' class='response_throbber' src='images/throbber.gif' style='display:none' />\n                    </div>\n                    ";}
+  return "\n                    <div class='sandbox_header'>\n                        <input class='submit' name='commit' type='button' value='Try it out!' />\n                        <input class='close' name='close' type='button' value='Close' />\n                        <a href='#' class='response_hider' style='display:none'>Hide Response</a>\n                        <img alt='Throbber' class='response_throbber' src='images/throbber.gif' style='display:none' />\n                    </div>\n                    ";}
 
   buffer += "\n    <ul class='operations' >\n      <li class='";
   foundHelper = helpers.httpMethod;
@@ -488,7 +488,7 @@ function program11(depth0,data) {
   tmp1.inverse = self.program(11, program11, data);
   stack1 = stack2.call(depth0, stack1, tmp1);
   if(stack1 || stack1 === 0) { buffer += stack1; }
-  buffer += "\n                </form>\n                <div class='response' style='display:none'>\n                    <h4>Request URL</h4>\n                    <div class='block request_url'></div>\n                    <h4>Response Body</h4>\n                    <div class='block response_body'></div>\n                    <h4>Response Code</h4>\n                    <div class='block response_code'></div>\n                    <h4>Response Headers</h4>\n                    <div class='block response_headers'></div>\n                </div>\n            </div>\n        </li>\n    </ul>\n";
+  buffer += "\n                </form>\n                <div class='response' style='display:none'>\n                    <div class='request_uril_container'>\n                        <h4>Request URL</h4>\n                        <div class='block request_url'>\n                            <pre />\n                        </div>\n                    </div>\n                    <div class='response_body_container'>\n                        <h4>Response Body</h4>\n                        <div class='block response_body'>\n                            <pre />\n                        </div>\n                    </div>\n                    <div class='response_code_container'>\n                        <h4>Response Code</h4>\n                        <div class='block response_code'>\n                            <pre />\n                        </div>\n                    </div>\n                    <div class='response_headers_container'>\n                        <h4>Response Headers</h4>\n                        <div class='block response_headers'>\n                            <pre />\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </li>\n    </ul>\n";
   return buffer;});
 })();
 
@@ -1651,6 +1651,7 @@ templates['status_code'] = template(function (Handlebars,depth0,helpers,partials
     OperationView.prototype.events = {
       'submit .sandbox': 'submitOperation',
       'click .submit': 'submitOperation',
+      'click .close': 'closeOperation',
       'click .response_hider': 'hideResponse',
       'click .toggleOperation': 'toggleOperationContent'
     };
@@ -1723,8 +1724,17 @@ templates['status_code'] = template(function (Handlebars,depth0,helpers,partials
       return $('.operation-status', $(this.el)).append(statusCodeView.render().el);
     };
 
+    OperationView.prototype.closeOperation = function(e) {
+      if (this.ws != null) {
+        this.ws.close();
+        $(".response_throbber", $(this.el)).hide();
+        $(".close", $(this.el)).attr('disabled', '');
+        return $('input.submit', $(this.el)).removeAttr('disabled');
+      }
+    };
+
     OperationView.prototype.submitOperation = function(e) {
-      var bodyParam, consumes, error_free, form, headerParams, invocationUrl, isFileUpload, isFormPost, map, o, obj, param, paramContentTypeField, responseContentTypeField, sep, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5,
+      var bodyParam, button, consumes, error_free, form, headerParams, invocationUrl, isFileUpload, isFormPost, map, newUrl, o, obj, param, paramContentTypeField, protocolLength, responseContentTypeField, sep, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5,
         _this = this;
       if (e != null) {
         e.preventDefault();
@@ -1821,6 +1831,33 @@ templates['status_code'] = template(function (Handlebars,depth0,helpers,partials
         log('submitting ' + invocationUrl);
         $(".request_url", $(this.el)).html("<pre>" + invocationUrl + "</pre>");
         $(".response_throbber", $(this.el)).show();
+        if (this.model.protocols && __indexOf.call(this.model.protocols, 'ws') >= 0) {
+          protocolLength = invocationUrl.indexOf(':');
+          newUrl = 'ws' + invocationUrl.substring(protocolLength);
+          button = $('input.close[name="close"]', $(this.el));
+          $('input.submit', $(this.el)).attr('disabled', '');
+          this.ws = new WebSocket(newUrl);
+          if (bodyParam != null) {
+            this.ws.onopen = function() {
+              return _this.ws.send(bodyParam);
+            };
+          }
+          button.show();
+          button.removeAttr('disabled');
+          this.ws.onmessage = function(e) {
+            var responseBodyPre;
+            responseBodyPre = $(".response_body > pre", $(_this.el));
+            $(".response_hider", $(_this.el)).show();
+            $(".response_code_container", $(_this.el)).hide();
+            $(".response_headers_container", $(_this.el)).hide();
+            responseBodyPre.append(e.data + '\n');
+            responseBodyPre.animate({
+              scrollTop: responseBodyPre[0].scrollHeight
+            }, 200);
+            return $(".response", $(_this.el)).slideDown();
+          };
+          return false;
+        }
         obj = {
           type: this.model.httpMethod,
           url: invocationUrl,
@@ -1958,9 +1995,9 @@ templates['status_code'] = template(function (Handlebars,depth0,helpers,partials
         pre = $('<pre class="xml" />').append(code);
       }
       response_body = pre;
-      $(".response_code", $(this.el)).html("<pre>" + data.status + "</pre>");
+      $(".response_code > pre", $(this.el)).text(data.status);
       $(".response_body", $(this.el)).html(response_body);
-      $(".response_headers", $(this.el)).html("<pre>" + data.getAllResponseHeaders() + "</pre>");
+      $(".response_headers > pre", $(this.el)).text(data.getAllResponseHeaders());
       $(".response", $(this.el)).slideDown();
       $(".response_hider", $(this.el)).show();
       $(".response_throbber", $(this.el)).hide();
